@@ -23,6 +23,7 @@ from architecture.supabase_utils.db.data_updater import updateFaceToSystem, aler
 from architecture.supabase_utils.main import supabase_client
 from architecture.utils.b64_to_image import base64_to_image
 from architecture.transformers_utils.main import predict_safety_measure
+from architecture.supabase_utils.auth.refresh import refreshUserSession
 from supabase_auth.types import Options
 
 
@@ -244,6 +245,20 @@ def register_route():
     result = registerUser(email=email, password=password, data=profile)
     status_code = 200 if result.get('success') else 400
     return result, status_code
+
+
+@app.route('/auth/refresh', methods=['POST'])
+def refresh_token_route():
+    payload = request.get_json() or {}
+    refresh_token = payload.get('refresh_token')
+
+    result = refreshUserSession(refresh_token)
+    if result.get('success'):
+        return result, 200
+
+    error_message = result.get('error') or 'Unable to refresh token'
+    status_code = 400 if error_message == 'refresh_token required' else 401
+    return {"success": False, "error": error_message}, status_code
 
 
 @app.route('/face/recognize', methods=['POST'])
